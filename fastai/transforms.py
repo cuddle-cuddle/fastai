@@ -89,6 +89,8 @@ class TfmType(IntEnum):
 
 
 class Denormalize():
+    """ De-normalizes an image, returning it to original format. 
+    """
     def __init__(self, m, s):
         self.m=np.array(m, dtype=np.float32)
         self.s=np.array(s, dtype=np.float32)
@@ -221,6 +223,13 @@ class CoordTransform(Transform):
 
 
 class AddPadding(CoordTransform):
+    """ A class that represents adding paddings to an image.
+
+    The default padding is border_reflect
+    Arguments:
+        pad: size of padding on top, bottom, left and right
+        mode: type of cv2 padding modes. (e.g., constant, reflect, wrap, replicate. etc. )
+    """
     def __init__(self, pad, mode=cv2.BORDER_REFLECT, tfm_y=TfmType.NO):
         super().__init__(tfm_y)
         self.pad,self.mode = pad,mode
@@ -380,6 +389,8 @@ class RandomRotate(CoordTransform):
 
 
 class RandomDihedral(CoordTransform):
+    """ Rotates images by random multiples of 90 degrees. 
+    """
     def set_state(self):
         self.rot_times = random.randint(0,3)
         self.do_flip = random.random()<0.5
@@ -440,6 +451,8 @@ class RandomBlur(Transform):
 
 
 def compose(im, y, fns):
+    """ apply a collection of transformation functions fns to images
+    """
     for fn in fns:
         #pdb.set_trace()
         im, y =fn(im, y)
@@ -466,6 +479,21 @@ class Transforms():
 
 def image_gen(normalizer, denorm, sz, tfms=None, max_zoom=None, pad=0, crop_type=None,
               tfm_y=None, sz_y=None, pad_mode=cv2.BORDER_REFLECT):
+    """
+    Returns transformer for specified image operations.
+    
+    Arguments:
+    normalizer: image normalizing funciton
+    denorm: image denormalizing function
+    sz: size, sz_y = sz if not specified.  
+    tfms: iterable collection of transformation functions
+    max_zoom: maximum zoom
+    pad: padding on top, left, right and bottom
+    crop_type: crop type
+    tfm_y: y axis specific transformations
+    sz_y: y size, height
+    pad_mode: cv2 padding style: repeat, reflect, etc. 
+    """
     if tfm_y is None: tfm_y=TfmType.NO
     if tfms is None: tfms=[]
     elif not isinstance(tfms, collections.Iterable): tfms=[tfms]
@@ -474,20 +502,28 @@ def image_gen(normalizer, denorm, sz, tfms=None, max_zoom=None, pad=0, crop_type
              else Scale(sz, tfm_y, sz_y=sz_y)]
     if pad: scale.append(AddPadding(pad, mode=pad_mode))
     #if (max_zoom is not None or pad!=0) and crop_type is None: crop_type = CropType.RANDOM
-    return Transforms(sz, scale + tfms, normalizer, denorm, crop_type, tfm_y=tfm_y, sz_y=sz_y)
+    return Transforms(sz, scale + tfms, 
+                      , denorm, crop_type, tfm_y=tfm_y, sz_y=sz_y)
 
-def noop(x): return x
+def noop(x): 
+    """dummy function for do-nothing. 
+    equivalent to: lambda x: x"""
+    return x
 
 transforms_basic    = [RandomRotate(10), RandomLighting(0.05, 0.05)]
 transforms_side_on  = transforms_basic + [RandomFlip()]
 transforms_top_down = transforms_basic + [RandomDihedral()]
 
 imagenet_stats = A([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+"""Statistics pertaining to image data from image net. mean and std of the images of each color channel"""
 inception_stats = A([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
 inception_models = (inception_4, inceptionresnet_2)
+"""pretrained pytorch inception models"""
 
 def tfms_from_stats(stats, sz, aug_tfms=None, max_zoom=None, pad=0, crop_type=CropType.RANDOM,
                     tfm_y=None, sz_y=None, pad_mode=cv2.BORDER_REFLECT):
+    """ Given the statistics of the traning image sets, returns seperate traning and valication transform functions
+    """
     if aug_tfms is None: aug_tfms=[]
     tfm_norm = Normalize(*stats, tfm_y=tfm_y)
     tfm_denorm = Denormalize(*stats)
@@ -500,6 +536,12 @@ def tfms_from_stats(stats, sz, aug_tfms=None, max_zoom=None, pad=0, crop_type=Cr
 
 def tfms_from_model(f_model, sz, aug_tfms=None, max_zoom=None, pad=0, crop_type=CropType.RANDOM,
                     tfm_y=None, sz_y=None, pad_mode=cv2.BORDER_REFLECT):
+    """ Returns seperate transformers of images for traning and validation.
+    Transformers are constructed according to the image statistics given b y the model. (See tfms_from_stats)
+    
+    Arguments:
+        f_model: model, pretrained or not pretrained
+    """
     stats = inception_stats if f_model in inception_models else imagenet_stats
     return tfms_from_stats(stats, sz, aug_tfms, max_zoom=max_zoom, pad=pad, crop_type=crop_type,
                        tfm_y=tfm_y, sz_y=sz_y, pad_mode=pad_mode)

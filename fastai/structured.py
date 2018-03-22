@@ -20,12 +20,14 @@ def parallel_trees(m, fn, n_jobs=8):
         return list(ProcessPoolExecutor(n_jobs).map(fn, m.estimators_))
 
 def draw_tree(t, df, size=10, ratio=0.6, precision=0):
-    """ Draws a representation of a random forest in IPython.
+    """ Draws a representation of a random forest in IPython. Displays MSE, value and sample size of each leaf. 
 
     Parameters:
     -----------
     t: The tree you wish to draw
     df: The data used to train the tree. This is used to get the names of the features.
+    ratio: aspect ratio of the tree
+    presision: desimal points of mse and value
     """
     s=export_graphviz(t, out_file=None, feature_names=df.columns, filled=True,
                       special_characters=True, rotate=True, precision=precision)
@@ -435,6 +437,8 @@ def proc_df(df, y_fld=None, skip_flds=None, do_scale=False, na_dict=None,
     return res
 
 def rf_feat_importance(m, df):
+    """ Returns a dataframe of columns and the feature importance of each column, sorted by their importance.
+    """
     return pd.DataFrame({'cols':df.columns, 'imp':m.feature_importances_}
                        ).sort_values('imp', ascending=False)
 

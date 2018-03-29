@@ -173,7 +173,7 @@ class Transform():
     def set_state(self): pass
     def __call__(self, x, y):
         self.set_state()
-        print('tfm_y type: ', self.tfm_y)
+        #print('tfm_y type: ', self.tfm_y)
         x,y = ((self.transform(x),y) if self.tfm_y==TfmType.NO
                 else self.transform(x,y) if self.tfm_y==TfmType.CUSTOM_Y
                 else self.transform(x,y) if self.tfm_y in (TfmType.PIXEL, TfmType.CLASS)
@@ -186,11 +186,11 @@ class Transform():
         """
         factoring the provision that x and Y might be transformed differently. 
         """
-        print('transform start: ')
+        #print('transform start: ')
         x = self.do_transform(x,False)
         y = self.do_transform(y,True)
-        print('returns x shape: ', x.shape )
-        print('returns y: ', y)
+        #print('returns x shape: ', x.shape )
+        #print('returns y: ', y)
         return (x, self.do_transform(y,True)) if y is not None else x
 
     def do_transform(self, x, is_y): raise NotImplementedError
@@ -214,15 +214,15 @@ class CoordTransform(Transform):
 
     def transform_coord(self, x, ys):
         yp = partition(ys, 4)
-        print("ys: ")
-        print(ys)
-        print("yp: ")
-        print(yp)
+        #print("ys: ")
+        #print(ys)
+        #print("yp: ")
+        #print(yp)
         y2 = [self.map_y(y,x) for y in yp]
-        print("y2: ")
-        print(y2)
-        print("y2 concat: ")
-        print(np.concatenate(y2))
+        #print("y2: ")
+        #print(y2)
+        #print("y2 concat: ")
+        #print(np.concatenate(y2))
         x = self.do_transform(x, False)
         return x, np.concatenate(y2)
 
@@ -378,7 +378,7 @@ class RandomRotateTest(Transform):
         mode: type of border
         tfm_y (TfmType): type of y transform
     """
-    def __init__(self, deg, p=0.99, mode=cv2.BORDER_REFLECT):
+    def __init__(self, deg, p=1, mode=cv2.BORDER_REFLECT):
         super().__init__(TfmType.CUSTOM_Y)
         self.deg,self.mode,self.p = deg,mode,p
 
@@ -387,9 +387,9 @@ class RandomRotateTest(Transform):
         self.store.rp = random.random()<self.p
 
     def do_transform(self, x, is_y):
-        #pdb.set_trace()
-        print("current rp: ", self.store.rp)
-        print("random deg: ", self.store.rdeg)
+        ##pdb.set_trace()
+        #print("current rp: ", self.store.rp)
+        #print("random deg: ", self.store.rdeg)
         if (is_y): 
             if(self.store.rp):
                 return self.store.rdeg
@@ -422,17 +422,17 @@ class RandomRotate(CoordTransform):
         self.store.rp = random.random()<self.p
 
     def do_transform(self, x, is_y):
-        #pdb.set_trace()
-        print("current rp: ", self.store.rp)
-        print("random deg: ", self.store.rdeg)
+        ##pdb.set_trace()
+        #print("current rp: ", self.store.rp)
+        #print("random deg: ", self.store.rdeg)
         if self.store.rp: 
             x = rotate_cv(x, self.store.rdeg, mode=self.mode,
                 interpolation=cv2.INTER_NEAREST if is_y else cv2.INTER_AREA)
-        if is_y:
-            print("y:", x.shape)
-        else:
-            print("x:", x.shape)
-        print("------")
+        #if is_y:
+            #print("y:", x.shape)
+        #else:
+            #print("x:", x.shape)
+        #print("------")
         return x
 
 
@@ -568,16 +568,16 @@ class Transforms():
         self.has_custom_y = False
         for t in tfms: 
             self.has_custom_y = (self.has_custom_y or t.tfm_y==TfmType.CUSTOM_Y )
-        print('custom_y init: ', self.has_custom_y)
+        #print('custom_y init: ', self.has_custom_y)
         crop_tfm = crop_fn_lu[crop_type](sz, tfm_y, sz_y)
         self.tfms = tfms + [crop_tfm, normalizer, ChannelOrder(tfm_y)]
     def __call__(self, im, y=None): 
-        pdb.set_trace()
+        #pdb.set_trace()
         has_custom_y = False
         for t in self.tfms: 
             has_custom_y = (has_custom_y or t.tfm_y==TfmType.CUSTOM_Y )
-        print('custom_y call: ', has_custom_y)
-        print(self.tfms)
+        #print('custom_y call: ', has_custom_y)
+        #print(self.tfms)
         return compose(im, y, self.tfms)
     def __repr__(self): return str(self.tfms)
 
@@ -619,7 +619,7 @@ def image_gen(normalizer, denorm, sz, tfms=None, max_zoom=None, pad=0, crop_type
     --------
      Transforms: the transformer object returned by this function
     """
-    print('Image_gen')
+    #print('Image_gen')
     if tfm_y is None: tfm_y=TfmType.NO
     if tfms is None: tfms=[]
     elif not isinstance(tfms, collections.Iterable): tfms=[tfms]

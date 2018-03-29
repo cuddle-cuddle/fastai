@@ -353,7 +353,9 @@ class ImageData(ModelData):
             fn(trn[0], trn[1], tfms[0], **kwargs), # train
             fn(val[0], val[1], tfms[1], **kwargs), # val
             fn(trn[0], trn[1], tfms[1], **kwargs), # fix
-            fn(val[0], val[1], tfms[0], **kwargs)  # aug
+            # yang changed it for my purpose
+            fn(trn[0], trn[1], tfms[0], **kwargs)  # aug
+            #fn(val[0], val[1], tfms[0], **kwargs)  # aug
         ]
         if test is not None:
             if isinstance(test, tuple):

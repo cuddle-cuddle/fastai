@@ -81,18 +81,24 @@ def fit(model, data, epochs, opt, crit, metrics=None, callbacks=None, stepper=St
     names = ["epoch", "trn_loss", "val_loss"] + [f.__name__ for f in metrics]
     layout = "{!s:10} " * len(names)
 
-    num_batch = len(data.trn_dl)
+    #num_batch = len(data.trn_dl)
+    num_batch = len(data.aug_dl)
     if epochs<1:
         num_batch = int(num_batch*epochs)
         epochs = 1
 
     for epoch in tnrange(epochs, desc='Epoch'):
         stepper.reset(True)
-        t = tqdm(iter(data.trn_dl), leave=False, total=num_batch)
+        # I'm using only augmented dataset
+        #t = tqdm(iter(data.trn_dl), leave=False, total=num_batch)
+        t = tqdm(iter(data.aug_dl), leave=False, total=num_batch)
         i = 0
         for (*x,y) in t:
             batch_num += 1
             for cb in callbacks: cb.on_batch_begin()
+            #print(y)
+            #print(len(x))
+            #print(x[0].shape)
             loss = stepper.step(V(x),V(y), epoch)
             avg_loss = avg_loss * avg_mom + loss * (1-avg_mom)
             debias_loss = avg_loss / (1 - avg_mom**batch_num)
@@ -103,7 +109,9 @@ def fit(model, data, epochs, opt, crit, metrics=None, callbacks=None, stepper=St
             if i>num_batch: break
             i += 1
 
-        vals = validate(stepper, data.val_dl, metrics)
+        # yang is changing this to augmented dataset
+        #vals = validate(stepper, data.val_dl, metrics)
+        vals = validate(stepper, data.aug_dl, metrics)
         if epoch == 0: print(layout.format(*names))
         print_stats(epoch, [debias_loss] + vals)
         stop=False

@@ -122,16 +122,10 @@ def parse_csv_labels(fn, skip_header=True, cat_separator = ' '):
     .
     :param cat_separator: the separator for the categories column
     """
-    with open(fn) as fileobj:
-        reader = csv.reader(fileobj)
-        if skip_header:
-            next(reader)
-
-        csv_lines = [l for l in reader]
-
-    fnames = [fname for fname, _ in csv_lines]
-    csv_labels = {a:b.split(cat_separator) for a,b in csv_lines}
-    return sorted(fnames), csv_labels
+    df = pd.read_csv(fn, index_col=0, header=0 if skip_header else None, dtype=str)
+    fnames = df.index.values
+    df.iloc[:,0] = df.iloc[:,0].str.split(cat_separator)
+    return sorted(fnames), list(df.to_dict().values())[0]
 
 def nhot_labels(label2idx, csv_labels, fnames, c):
     all_idx = {k: n_hot([label2idx[o] for o in v], c)
@@ -144,7 +138,7 @@ def csv_source(folder, csv_file, skip_header=True, suffix='', continuous=False):
 
 def dict_source(folder, fnames, csv_labels, suffix='', continuous=False):
     all_labels = sorted(list(set(p for o in csv_labels.values() for p in o)))
-    full_names = [os.path.join(folder,fn+suffix) for fn in fnames]
+    full_names = [os.path.join(folder,str(fn)+suffix) for fn in fnames]
     if continuous:
         label_arr = np.array([np.array(csv_labels[i]).astype(np.float32)
                 for i in fnames])
@@ -389,7 +383,7 @@ class ImageClassifierData(ImageData):
                 shape of `(5000, 784)` and `y` has the shape of `(5000,)`)
             val: a tuple of validation data matrix and target label/classification array.
             bs: batch size
-            tfms: transformations (for data augmentations). e.g. output of `tfms_from_model`
+            tfms: tuple of two transformations (for data augmentations), one for training and one for validation data. e.g. output of `tfms_from_model` or `tfms_from_stats`
             classes: a list of all labels/classifications
             num_workers: a number of workers
             test: a matrix of test data (the shape should match `trn[0]`)

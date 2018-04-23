@@ -83,7 +83,11 @@ class Tokenizer():
 
     def proc_text(self, s):
         s = self.re_rep.sub(Tokenizer.replace_rep, s)
-        s = self.re_word_rep.sub(Tokenizer.replace_wrep, s)
+        try:
+            s = self.re_word_rep.sub(Tokenizer.replace_wrep, s)
+        except: 
+            pdb.set_trace()
+            print('error while processing text ', s)
         s = Tokenizer.do_caps(s)
         s = re.sub(r'([/#])', r' \1 ', s)
         s = re.sub(' {2,}', ' ', s)

@@ -116,7 +116,7 @@ def flip_tensor(x, dim):
 
 class LanguageModelLoader():
 
-    def __init__(self, ds, bs, bptt, backwards=False):
+    def __init__(self, ds, bs, bptt, backwards=False, shuffle=False):
         self.bs,self.bptt,self.backwards = bs,bptt,backwards
         text = sum([o.text for o in ds], [])
         fld = ds.fields['text']
